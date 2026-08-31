@@ -8164,7 +8164,7 @@ var $async$azy=A.I(function(a,b){if(a===1)return A.E(b,r)
 for(;;)switch(s){case 0:if($.a_==null)A.amU()
 $.a_.toString
 s=2
-return A.z(A.akS("sb_publishable_QxcnrYLgcAKGnHBwIEh4bg_7MIHnt1","https://rfycpsgotkszgwhdxcpg.supabase.co"),$async$azy)
+return A.z(A.akS("sb_publishable_QxcnrYLgcAkGnHBwIEh4bg_7MIHnvqL","https://rfycpsgotkszgwhdxcpg.supabase.co"),$async$azy)
 case 2:if($.a_==null)A.amU()
 q=$.a_
 q.toString
