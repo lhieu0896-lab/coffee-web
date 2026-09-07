@@ -8164,7 +8164,7 @@ var $async$aAy=A.J(function(a,b){if(a===1)return A.F(b,r)
 for(;;)switch(s){case 0:if($.a1==null)A.anm()
 $.a1.toString
 s=2
-return A.A(A.ali("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmeWNwc2dvdGtzemd3aGR4Y3BnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODk4NzUsImV4cCI6MjEwMzY2NTg3NX0.1sY05zgaNfHUs2mP1ovP9SEFB8GmexPTzmqPRRuncB0","https://rfycpsgotkszgwhdxcpg.supabase.co"),$async$aAy)
+return A.A(A.ali("sb_publishable_QxcnrYLgcAkGnHBwIEh4bg_7MIHnvqL","https://rfycpsgotkszgwhdxcpg.supabase.co"),$async$aAy)
 case 2:if($.a1==null)A.anm()
 q=$.a1
 q.toString
