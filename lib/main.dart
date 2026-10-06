@@ -1215,46 +1215,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── LEFT 70%: Brand showcase ──
+              // ── LEFT 70%: Brand showcase (clean, no overlays) ──
               Expanded(
                 flex: 7,
                 child: _bentoCard(
                   color: Colors.white,
                   child: Stack(
                     children: [
-                      // Clock pill — góc trên trái
-                      Positioned(
-                        top: 0, left: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1C0E05),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [BoxShadow(color: Colors.black.withAlpha(80), blurRadius: 16, offset: const Offset(0, 4))],
-                          ),
-                          child: const LiveClock(size: 36),
-                        ),
-                      ),
-                      // Status badge — góc trên phải
-                      Positioned(
-                        top: 4, right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(40),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF5CB85C), shape: BoxShape.circle)),
-                              const SizedBox(width: 6),
-                              Text('Quán đang mở', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
-                            ],
-                          ),
-                        ),
-                      ),
                       // Brand center
                       Center(
                         child: Column(
@@ -1319,7 +1286,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              // ── RIGHT 30%: Action sidebar ──
+              // ── RIGHT 30%: Action sidebar (clock + status + actions) ──
               Expanded(
                 flex: 3,
                 child: _bentoCard(
@@ -1327,10 +1294,39 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Clock pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(120),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white.withAlpha(18)),
+                        ),
+                        child: const LiveClock(size: 32),
+                      ),
+                      const SizedBox(height: 10),
+                      // Status badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(12),
+                          borderRadius: BorderRadius.circular(40),
+                          border: Border.all(color: Colors.white.withAlpha(20)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF5CB85C), shape: BoxShape.circle)),
+                            const SizedBox(width: 6),
+                            Text('Quán đang mở', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(180))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       Text('LỰA CHỌN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(90), letterSpacing: 1.6)),
                       const SizedBox(height: 6),
                       const Text('Chọn vai\ncủa bạn', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, height: 1.25, letterSpacing: -0.3)),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       Text('VAI TRÒ', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(90), letterSpacing: 1.6)),
                       const SizedBox(height: 10),
                       _roleCard(
