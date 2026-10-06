@@ -1785,20 +1785,12 @@ class MascotAssistant extends StatefulWidget {
 
 class _MascotAssistantState extends State<MascotAssistant> with TickerProviderStateMixin {
   static const double _size = 64;
-  double _x = 16, _y = 40;
   bool _open = false;
   bool _busy = false;
-  bool _placedInit = false;
-  bool _faceRight = true;
   bool _blink = false;
-  bool _isMoving = false;
-  Timer? _moveTimer;
   Timer? _blinkTimer;
-  Timer? _walkStopTimer;
   late AnimationController _bob;
   late AnimationController _tail;
-  late AnimationController _walk;
-  static const Duration _moveDuration = Duration(milliseconds: 1600);
   final List<_ChatMsg> _messages = [
     _ChatMsg(false, 'Gâu! Mình là Bông 🐶 — chó linh vật của quán. Bạn chưa biết uống gì thì cứ nói mình nghe (ví dụ "muốn gì ngọt mát", "ít đường ít béo"...), mình gợi ý và đặt giúp luôn nha!'),
   ];
@@ -1810,9 +1802,6 @@ class _MascotAssistantState extends State<MascotAssistant> with TickerProviderSt
     super.initState();
     _bob = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
     _tail = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
-    // Chu kỳ bước chân: lặp liên tục, nhưng chỉ "có tác dụng" lên hình vẽ khi _isMoving = true.
-    _walk = AnimationController(vsync: this, duration: const Duration(milliseconds: 420))..repeat();
-    _moveTimer = Timer.periodic(const Duration(seconds: 6), (_) => _wander());
     _scheduleBlink();
   }
 
@@ -1829,41 +1818,13 @@ class _MascotAssistantState extends State<MascotAssistant> with TickerProviderSt
 
   @override
   void dispose() {
-    _moveTimer?.cancel();
     _blinkTimer?.cancel();
-    _walkStopTimer?.cancel();
     _bob.dispose();
     _tail.dispose();
-    _walk.dispose();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
   }
-
-  void _wander([Size? bounds]) {
-    if (_open || !mounted) return;
-    final b = bounds ?? _lastBounds;
-    if (b == null || b.width < 120 || b.height < 160) return;
-    final rnd = math.Random();
-    final newX = 8 + rnd.nextDouble() * (b.width - _size - 16);
-    final newY = 8 + rnd.nextDouble() * (b.height - _size - 160);
-    final dist = (Offset(newX, newY) - Offset(_x, _y)).distance;
-    setState(() {
-      _faceRight = newX >= _x;
-      _x = newX;
-      _y = newY;
-      // Chỉ "diễn" dáng đi (chân cử động, người hơi lắc) khi quãng đường di chuyển đủ xa.
-      _isMoving = dist > 18;
-    });
-    _walkStopTimer?.cancel();
-    if (_isMoving) {
-      _walkStopTimer = Timer(_moveDuration, () {
-        if (mounted) setState(() => _isMoving = false);
-      });
-    }
-  }
-
-  Size? _lastBounds;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1910,57 +1871,36 @@ class _MascotAssistantState extends State<MascotAssistant> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final b = constraints.biggest;
-      _lastBounds = b;
-      if (!_placedInit && b.width > 120 && b.height > 160) {
-        _placedInit = true;
-        _x = b.width - _size - 20;
-        _y = b.height - _size - 140;
-      }
-      return Stack(
-        children: [
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 1600),
-            curve: Curves.easeInOut,
-            left: _x.clamp(0, math.max(0, b.width - _size)),
-            top: _y.clamp(0, math.max(0, b.height - _size)),
-            child: GestureDetector(
-              onTap: () => setState(() => _open = !_open),
-              child: AnimatedBuilder(
-                animation: Listenable.merge([_bob, _tail, _walk]),
-                builder: (_, __) {
-                  // Đứng yên: nhấp nhô thở nhẹ. Đang đi: nảy theo nhịp bước chân (2 nhịp mỗi bước).
-                  final bounceY = _isMoving ? -(math.sin(_walk.value * 2 * math.pi).abs()) * 6 : -5 * _bob.value;
-                  return Transform.translate(
-                    offset: Offset(0, bounceY),
-                    child: Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()..scale(_faceRight ? 1.0 : -1.0, 1.0),
-                      child: _MascotFace(
-                        size: _size,
-                        tailWag: _isMoving ? math.sin(_walk.value * 2 * math.pi * 2) : (_tail.value * 2 - 1),
-                        earTwitch: _bob.value,
-                        blink: _blink,
-                        talking: _open,
-                        walking: _isMoving,
-                        walkPhase: _walk.value,
-                      ),
-                    ),
-                  );
-                },
+    return Stack(
+      children: [
+        Positioned(
+          right: 20,
+          bottom: 140,
+          child: GestureDetector(
+            onTap: () => setState(() => _open = !_open),
+            child: AnimatedBuilder(
+              animation: Listenable.merge([_bob, _tail]),
+              builder: (_, __) => Transform.translate(
+                offset: Offset(0, -5 * _bob.value),
+                child: _MascotFace(
+                  size: _size,
+                  tailWag: _tail.value * 2 - 1,
+                  earTwitch: _bob.value,
+                  blink: _blink,
+                  talking: _open,
+                ),
               ),
             ),
           ),
-          if (_open)
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: _chatCard(context),
-            ),
-        ],
-      );
-    });
+        ),
+        if (_open)
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: _chatCard(context),
+          ),
+      ],
+    );
   }
 
   Widget _chatCard(BuildContext context) {
@@ -2059,16 +1999,12 @@ class _MascotFace extends StatelessWidget {
   final double earTwitch;
   final bool blink;
   final bool talking;
-  final bool walking;
-  final double walkPhase;
   const _MascotFace({
     required this.size,
     this.tailWag = 0,
     this.earTwitch = 0,
     this.blink = false,
     this.talking = false,
-    this.walking = false,
-    this.walkPhase = 0,
   });
   @override
   Widget build(BuildContext context) {
@@ -2076,7 +2012,7 @@ class _MascotFace extends StatelessWidget {
       width: size * 1.35,
       height: size * 1.15,
       child: CustomPaint(
-        painter: _MascotPainter(tailWag: tailWag, earTwitch: earTwitch, blink: blink, talking: talking, walking: walking, walkPhase: walkPhase),
+        painter: _MascotPainter(tailWag: tailWag, earTwitch: earTwitch, blink: blink, talking: talking, walking: false, walkPhase: 0),
       ),
     );
   }
