@@ -1795,6 +1795,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9, maxWidth: 560),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => CustomizeItemSheet(
         item: item,
@@ -2419,20 +2420,136 @@ class _CustomizeItemSheetState extends State<CustomizeItemSheet> {
     super.dispose();
   }
 
-  Widget _choices<T>(List<(String, T)> options, T current, ValueChanged<T> onSelect) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: options.map((o) {
-        final sel = o.$2 == current;
-        return ChoiceChip(
-          label: Text(o.$1),
-          selected: sel,
-          selectedColor: AppColors.primary,
-          labelStyle: TextStyle(color: sel ? Colors.white : AppColors.textMain),
-          onSelected: (_) => setState(() => onSelect(o.$2)),
-        );
-      }).toList(),
+  bool _showToppings = false;
+  bool _showNote = false;
+
+  Widget _sectionTitle(String label, {String? hint}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 18, bottom: 8),
+      child: Row(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textMain)),
+          if (hint != null) ...[
+            const SizedBox(width: 8),
+            Flexible(child: Text(hint, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.textMuted))),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _segmented<T>(List<(String, T)> options, T current, ValueChanged<T> onSelect) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+      child: Row(
+        children: options.map((o) {
+          final sel = o.$2 == current;
+          return Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => onSelect(o.$2)),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  color: sel ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  o.$1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w700 : FontWeight.w500, color: sel ? Colors.white : AppColors.textMain),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _sizeCard(String size, int price) {
+    final sel = _size == size;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _size = size),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: sel ? AppColors.accentLight : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: sel ? AppColors.accent : AppColors.border, width: sel ? 1.6 : 1),
+          ),
+          child: Column(
+            children: [
+              Text('Size $size', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: sel ? AppColors.accent : AppColors.textMain)),
+              const SizedBox(height: 2),
+              Text('${formatMoney(price)}đ', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _toppingSection() {
+    final count = _selected.length;
+    return Container(
+      margin: const EdgeInsets.only(top: 18),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() => _showToppings = !_showToppings),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  const Text('Thêm topping', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textMain)),
+                  const SizedBox(width: 8),
+                  if (count > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(10)),
+                      child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                    )
+                  else
+                    const Text('Không bắt buộc', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _showToppings ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 160),
+                    child: const Icon(Icons.keyboard_arrow_down, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_showToppings) ...[
+            const Divider(height: 1, color: AppColors.border),
+            ...widget.toppings.map((t) {
+              final sel = _selected.contains(t.id);
+              return InkWell(
+                onTap: () => setState(() => sel ? _selected.remove(t.id) : _selected.add(t.id)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(sel ? Icons.check_circle : Icons.radio_button_unchecked, size: 20, color: sel ? AppColors.accent : AppColors.border),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(t.name, style: TextStyle(fontSize: 13.5, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: AppColors.textMain))),
+                      Text('+${formatMoney(t.price)}đ', style: TextStyle(fontSize: 13, color: sel ? AppColors.accent : AppColors.textMuted, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
     );
   }
 
@@ -2440,113 +2557,137 @@ class _CustomizeItemSheetState extends State<CustomizeItemSheet> {
   Widget build(BuildContext context) {
     final isCoffee = widget.item.category.contains('Cà Phê');
     final iceOptions = _isBlended
-        ? <(String, int)>[('100% (Chuẩn xay)', 100), ('70% đá', 70), ('50% (Ít đá)', 50)]
-        : <(String, int)>[('100% (Chuẩn)', 100), ('70% đá', 70), ('50% đá', 50), ('Không đá (+20% cốt)', 0)];
+        ? <(String, int)>[('100%', 100), ('70%', 70), ('50%', 50)]
+        : <(String, int)>[('100%', 100), ('70%', 70), ('50%', 50), ('Không', 0)];
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    widget.item.imageUrl,
-                    width: 68,
-                    height: 68,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(width: 68, height: 68, color: AppColors.background, child: const Icon(Icons.coffee, color: AppColors.textMuted)),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
                     children: [
-                      Text(widget.item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.textMain)),
-                      const SizedBox(height: 2),
-                      Text('${formatMoney(_unit)}đ / ly', style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          widget.item.imageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: AppColors.background, child: const Icon(Icons.coffee, color: AppColors.textMuted)),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(widget.item.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textMain, height: 1.25)),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: AppColors.textMuted),
+                        tooltip: 'Đóng',
+                      ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const Divider(height: 28, color: AppColors.border),
-            fieldLabel('Kích cỡ'),
-            _choices<String>([
-              ('Size M  ${formatMoney(widget.item.priceM)}đ', 'M'),
-              ('Size L  ${formatMoney(widget.item.priceL)}đ', 'L'),
-            ], _size, (v) => _size = v),
-            fieldLabel('Mức đường'),
-            _choices<int>([('100% (Chuẩn)', 100), ('70% đường', 70), ('50% đường', 50), ('0% (Không đường)', 0)], _sugar, (v) => _sugar = v),
-            fieldLabel(_isBlended ? 'Mức đá (món xay bắt buộc có đá)' : 'Mức đá'),
-            _choices<int>(iceOptions, _ice, (v) => _ice = v),
-            fieldLabel('Mức độ đậm'),
-            _choices<String>([
-              ('Chuẩn vị (100%)', 'Chuẩn vị'),
-              (isCoffee ? 'Đậm vị (+1 Espresso Shot)' : 'Đậm vị (+20% Cốt)', 'Đậm vị'),
-            ], _strength, (v) => _strength = v),
-            if (widget.toppings.isNotEmpty) ...[
-              fieldLabel('Topping thêm'),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.toppings.map((t) {
-                  final sel = _selected.contains(t.id);
-                  return FilterChip(
-                    label: Text('${t.name} (+${formatMoney(t.price)}đ)'),
-                    selected: sel,
-                    selectedColor: AppColors.accentLight,
-                    checkmarkColor: AppColors.accent,
-                    labelStyle: TextStyle(color: sel ? AppColors.accent : AppColors.textMain, fontWeight: sel ? FontWeight.bold : FontWeight.normal),
-                    onSelected: (v) => setState(() => v ? _selected.add(t.id) : _selected.remove(t.id)),
-                  );
-                }).toList(),
+                  _sectionTitle('Kích cỡ'),
+                  Row(
+                    children: [
+                      _sizeCard('M', widget.item.priceM),
+                      const SizedBox(width: 10),
+                      _sizeCard('L', widget.item.priceL),
+                    ],
+                  ),
+                  _sectionTitle('Đường'),
+                  _segmented<int>([('100%', 100), ('70%', 70), ('50%', 50), ('0%', 0)], _sugar, (v) => _sugar = v),
+                  _sectionTitle('Đá', hint: _isBlended ? 'Món xay luôn có đá' : (_ice == 0 ? 'Không đá: thêm 20% cốt' : null)),
+                  _segmented<int>(iceOptions, _ice, (v) => _ice = v),
+                  const SizedBox(height: 14),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _strength = _strength == 'Đậm vị' ? 'Chuẩn vị' : 'Đậm vị'),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Đậm vị', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textMain)),
+                              Text(isCoffee ? 'Thêm 1 shot espresso' : 'Thêm 20% cốt', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _strength == 'Đậm vị',
+                          activeTrackColor: AppColors.accent,
+                          onChanged: (v) => setState(() => _strength = v ? 'Đậm vị' : 'Chuẩn vị'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (widget.toppings.isNotEmpty) _toppingSection(),
+                  const SizedBox(height: 6),
+                  if (_showNote || _note.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: TextField(controller: _note, maxLength: 200, autofocus: true, decoration: inputDeco('Ví dụ: ít ngọt hơn, mang đi...')),
+                    )
+                  else
+                    TextButton.icon(
+                      style: TextButton.styleFrom(foregroundColor: AppColors.textMuted, padding: const EdgeInsets.symmetric(horizontal: 4)),
+                      onPressed: () => setState(() => _showNote = true),
+                      icon: const Icon(Icons.edit_note, size: 20),
+                      label: const Text('Thêm ghi chú cho quầy bar'),
+                    ),
+                ],
               ),
-            ],
-            const SizedBox(height: 16),
-            TextField(controller: _note, maxLength: 200, decoration: inputDeco('Ghi chú đặc biệt cho quầy bar...')),
-            const SizedBox(height: 8),
-            Row(
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
               children: [
-                const Text('Số lượng', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                const Spacer(),
                 QtyStepper(value: _qty, onChanged: (v) => setState(() => _qty = v)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        widget.onAdd(CartItem(
+                          item: widget.item,
+                          size: _size,
+                          sugar: _sugar,
+                          ice: _ice,
+                          strength: _strength,
+                          toppings: _chosen,
+                          note: _note.text.trim(),
+                          quantity: _qty,
+                        ));
+                        Navigator.pop(context);
+                      },
+                      child: Text('Thêm vào giỏ • ${formatMoney(_unit * _qty)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  widget.onAdd(CartItem(
-                    item: widget.item,
-                    size: _size,
-                    sugar: _sugar,
-                    ice: _ice,
-                    strength: _strength,
-                    toppings: _chosen,
-                    note: _note.text.trim(),
-                    quantity: _qty,
-                  ));
-                  Navigator.pop(context);
-                },
-                child: Text('Thêm vào giỏ • ${formatMoney(_unit * _qty)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2674,7 +2815,7 @@ class _CartBottomSheetState extends State<CartBottomSheet> {
       setState(() {
         _appliedCode = code;
         _discount = toInt(res);
-        _voucherMsg = '✓ Đã áp dụng mã $code: giảm ${formatMoney(_discount)}đ';
+        _voucherMsg = 'Đã áp dụng mã $code: giảm ${formatMoney(_discount)}đ';
         _voucherError = false;
       });
     } catch (e) {
@@ -2753,7 +2894,7 @@ class _CartBottomSheetState extends State<CartBottomSheet> {
               IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: AppColors.textMuted)),
             ],
           ),
-          if (!empty) const Text('Mẹo: vuốt món sang trái hoặc bấm 🗑 để xóa', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          if (!empty) const Text('Mẹo: vuốt món sang trái để xóa nhanh', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
           const SizedBox(height: 8),
           if (empty)
             const Padding(
