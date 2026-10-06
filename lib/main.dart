@@ -19,6 +19,8 @@ class AppConfig {
   static const String bankName = 'MB Bank';
   static const String fallbackSiteUrl = 'https://lhieu0896-lab.github.io/coffee-web/';
   static const int tableCount = 20;
+  static const int openHour = 7;
+  static const int closeHour = 22;
   // Logo quán: để trống = dùng logo chữ mặc định.
   // Muốn dùng logo thật: chép file logo.png vào thư mục web/ của project rồi đặt 'logo.png'
   static const String logoUrl = 'logo.png';
@@ -100,10 +102,46 @@ String friendlyError(Object e) {
   return raw;
 }
 
+OverlayEntry? _toastEntry;
+Timer? _toastTimer;
+
+// Overlay toast instead of SnackBar: a SnackBar swallows taps on Scaffold.bottomNavigationBar
+// (the cart bar) while it is visible. IgnorePointer guarantees the toast never blocks input.
 void showSnack(BuildContext context, String msg, {bool error = false}) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(backgroundColor: error ? AppColors.danger : AppColors.primary, content: Text(msg)),
+  if (!context.mounted) return;
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  _toastTimer?.cancel();
+  _toastEntry?.remove();
+  final entry = OverlayEntry(
+    builder: (ctx) => Positioned(
+      left: 16,
+      right: 16,
+      bottom: 96 + MediaQuery.of(ctx).padding.bottom,
+      child: IgnorePointer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Material(
+              color: error ? AppColors.danger : AppColors.primary,
+              elevation: 6,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Text(msg, style: const TextStyle(color: Colors.white, fontSize: 14)),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
+  _toastEntry = entry;
+  overlay.insert(entry);
+  _toastTimer = Timer(const Duration(milliseconds: 2200), () {
+    entry.remove();
+    if (_toastEntry == entry) _toastEntry = null;
+  });
 }
 
 InputDecoration inputDeco([String? hint]) => InputDecoration(
@@ -603,6 +641,51 @@ const List<String> _weekdaysShort = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th
 
 /// Đồng hồ kiểu màn hình khóa / StandBy iPhone: số to, đậm, cam, nền tối.
 /// size = cỡ chữ số (nhỏ cho thanh tiêu đề, to cho màn hình chính).
+class OpenStatusBadge extends StatefulWidget {
+  const OpenStatusBadge({super.key});
+  @override
+  State<OpenStatusBadge> createState() => _OpenStatusBadgeState();
+}
+
+class _OpenStatusBadgeState extends State<OpenStatusBadge> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = DateTime.now().hour;
+    final open = h >= AppConfig.openHour && h < AppConfig.closeHour;
+    final dot = open ? const Color(0xFF5CB85C) : const Color(0xFFD9534F);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(12),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.white.withAlpha(20)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
+          Text(open ? 'Quán đang mở' : 'Quán đã đóng cửa', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(180))),
+        ],
+      ),
+    );
+  }
+}
+
 class LiveClock extends StatefulWidget {
   final bool showDate;
   final double size;
@@ -1305,23 +1388,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         child: const LiveClock(size: 32),
                       ),
                       const SizedBox(height: 10),
-                      // Status badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(12),
-                          borderRadius: BorderRadius.circular(40),
-                          border: Border.all(color: Colors.white.withAlpha(20)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF5CB85C), shape: BoxShape.circle)),
-                            const SizedBox(width: 6),
-                            Text('Quán đang mở', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(180))),
-                          ],
-                        ),
-                      ),
+                      const OpenStatusBadge(),
                       const SizedBox(height: 20),
                       Text('LỰA CHỌN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(90), letterSpacing: 1.6)),
                       const SizedBox(height: 6),
@@ -1347,15 +1414,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       ],
                       const Spacer(),
                       Divider(color: Colors.white.withAlpha(20), height: 24),
-                      Row(
-                        children: [
-                          Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF5CB85C), shape: BoxShape.circle)),
-                          const SizedBox(width: 8),
-                          Text('Quán đang mở cửa', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(160))),
-                        ],
+                      Text('GIỜ MỞ CỬA', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Colors.white.withAlpha(90), letterSpacing: 1.6)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${AppConfig.openHour.toString().padLeft(2, '0')}:00 – ${AppConfig.closeHour}:00 · Hàng ngày',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withAlpha(140)),
                       ),
-                      const SizedBox(height: 3),
-                      Text('07:00 – 22:00 · Hàng ngày', style: TextStyle(fontSize: 10.5, color: Colors.white.withAlpha(80))),
                     ],
                   ),
                 ),
@@ -1473,6 +1537,7 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
   bool _loading = true;
   String? _error;
   String? _lastOrderId;
+  String? _savedVoucher;
 
   int get _cartCount => _cart.fold<int>(0, (s, c) => s + c.quantity);
   int get _cartTotal => _cart.fold<int>(0, (s, c) => s + c.lineTotal);
@@ -1754,13 +1819,18 @@ class _CustomerMenuScreenState extends State<CustomerMenuScreen> {
         table: _table,
         onCartChanged: () => setState(() {}),
         onOrderPlaced: _afterOrderPlaced,
+        initialVoucher: _savedVoucher,
+        onVoucherChanged: (code) => _savedVoucher = code,
       ),
     );
   }
 
   void _afterOrderPlaced(Map<String, dynamic> res, String payment) {
     final id = res['id'].toString();
-    setState(() => _lastOrderId = id);
+    setState(() {
+      _lastOrderId = id;
+      _savedVoucher = null;
+    });
     Navigator.push(context, MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: id)));
   }
 }
@@ -2517,7 +2587,9 @@ class CartBottomSheet extends StatefulWidget {
   final String table;
   final VoidCallback onCartChanged;
   final void Function(Map<String, dynamic> result, String payment) onOrderPlaced;
-  const CartBottomSheet({super.key, required this.cart, required this.table, required this.onCartChanged, required this.onOrderPlaced});
+  final String? initialVoucher;
+  final ValueChanged<String?>? onVoucherChanged;
+  const CartBottomSheet({super.key, required this.cart, required this.table, required this.onCartChanged, required this.onOrderPlaced, this.initialVoucher, this.onVoucherChanged});
   @override
   State<CartBottomSheet> createState() => _CartBottomSheetState();
 }
@@ -2539,6 +2611,12 @@ class _CartBottomSheetState extends State<CartBottomSheet> {
   void initState() {
     super.initState();
     _loadVouchers();
+    // Re-validate against the current subtotal: the cart may have changed while the sheet was closed.
+    if (widget.initialVoucher != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyVoucher(widget.initialVoucher);
+      });
+    }
   }
 
   @override
@@ -2566,6 +2644,7 @@ class _CartBottomSheetState extends State<CartBottomSheet> {
         _voucherError = true;
       }
     });
+    widget.onVoucherChanged?.call(null);
   }
 
   void _remove(CartItem c) {
@@ -2590,6 +2669,8 @@ class _CartBottomSheetState extends State<CartBottomSheet> {
     });
     try {
       final res = await db.rpc('check_voucher', params: {'p_code': code, 'p_subtotal': _subtotal});
+      widget.onVoucherChanged?.call(code);
+      if (!mounted) return;
       setState(() {
         _appliedCode = code;
         _discount = toInt(res);
@@ -2597,6 +2678,8 @@ class _CartBottomSheetState extends State<CartBottomSheet> {
         _voucherError = false;
       });
     } catch (e) {
+      widget.onVoucherChanged?.call(null);
+      if (!mounted) return;
       setState(() {
         _appliedCode = null;
         _discount = 0;
