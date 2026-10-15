@@ -18,21 +18,46 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Đặt món cà phê & đồ uống trực tiếp tại bàn hoặc mang về — Quán Nhà Coffee">
+  <meta name="theme-color" content="#4A2810">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="caphe">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Quán Nhà">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>caphe</title>
+  <title>Quán Nhà Coffee</title>
   <link rel="manifest" href="manifest.json">
   <!-- SheetJS for Excel export -->
   <script src="xlsx.full.min.js"></script>
+
+  <!-- PWA Install Helper Script -->
+  <script>
+    window.pwaDeferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.pwaDeferredPrompt = e;
+      window.dispatchEvent(new CustomEvent('pwa-install-ready'));
+    });
+    window.triggerPwaInstall = function() {
+      if (window.pwaDeferredPrompt) {
+        window.pwaDeferredPrompt.prompt();
+        window.pwaDeferredPrompt.userChoice.then(function(choice) {
+          window.pwaDeferredPrompt = null;
+        });
+        return true;
+      }
+      return false;
+    };
+    window.isPwaStandalone = function() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    };
+  </script>
 </head>
 <body>
   <!--
