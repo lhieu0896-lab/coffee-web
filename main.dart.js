@@ -53740,7 +53740,7 @@ n=r
 J.aR7(q,new A.W(n,new A.awH(),A.X(n).i("W<1,il<@>>")))
 p=A.aSn(q,t.sW)
 q=$.ra()
-q.hD("eval",["(function(){if(!window.XLSX){alert('Th\u01b0 vi\u1ec7n XLSX ch\u01b0a t\u1ea3i. Vui l\xf2ng th\u1eed l\u1ea1i.');return;}var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet("+A.j(q.h(0,"JSON").hD("stringify",A.b([p],t.p6)))+");ws['!cols']=[{wch:10},{wch:6},{wch:14},{wch:16},{wch:14},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,'Hoa don');XLSX.writeFile(wb,'"+A.j(s)+"');})()"])
+q.hD("eval",["(function(){function exportNow(){var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet("+A.j(q.h(0,"JSON").hD("stringify",A.b([p],t.p6)))+");ws['!cols']=[{wch:10},{wch:6},{wch:14},{wch:16},{wch:14},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,'Hoa don');XLSX.writeFile(wb,'"+A.j(s)+"');}if(window.XLSX){exportNow();}else{var s=document.createElement('script');s.src='xlsx.full.min.js';s.onload=function(){exportNow();};s.onerror=function(){var c=document.createElement('script');c.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';c.onload=function(){exportNow();};c.onerror=function(){alert('Kh\xf4ng th\u1ec3 t\u1ea3i th\u01b0 vi\u1ec7n XLSX. Vui l\xf2ng xu\u1ea5t b\u1eb1ng \u0111\u1ecbnh d\u1ea1ng CSV.');};document.head.appendChild(c);};document.head.appendChild(s);}})()"])
 q=this.c
 q.toString
 A.em(q,"\u0110\xe3 xu\u1ea5t "+a.length+" h\xf3a \u0111\u01a1n ra Excel!",!1)}catch(l){o=A.a0(l)
