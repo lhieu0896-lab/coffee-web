@@ -7,7 +7,7 @@
   "background_color": "#FAF6F0",
   "theme_color": "#4A2810",
   "description": "Đặt món cà phê & đồ uống trực tiếp tại bàn hoặc mang về — Quán Nhà Coffee",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "prefer_related_applications": false,
   "icons": [
     {
